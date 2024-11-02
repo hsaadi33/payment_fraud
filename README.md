@@ -10,6 +10,7 @@ This project aims to detect fraudulent payment transactions using a machine lear
 - [Future Improvements](#future-improvements)
 
 ## Project Structure
+```plaintext
 payment_fraud/
 ├── app/
 │   ├── main.py               # FastAPI app for fraud prediction
@@ -22,17 +23,17 @@ payment_fraud/
 ├── requirements.txt          # Required Python packages
 ├── DockerFile                # DockerFile
 └── README.md                 # Project documentation
-
+```
 
 ## Data Exploration and Modeling
 The notebooks/eda.ipynb file contains exploratory data analysis (EDA) on transaction data, identifying key patterns and correlations useful for fraud detection. We did feature engineering based on this EDA.
 
 The model_training.ipynb file covers data preprocessing, and model training using the CatBoost algorithm. The trained model is saved for use in the API.
 
-## API Usage
+## API Usage and Testing
 The FastAPI app serves the trained model for predictions. To start the API locally, change the directory to the app directory, run the fastapi app in main.py. To test the api, open another terminal window, and change the directory to test_api, and then run python test_unit/test_api.py.
 
 
 ## Future Improvements
-Enhance the model with additional features and tuning.
-Deploy the API to a cloud service for production use.
+- Enhance the model with additional features and tuning.
+- Deploy the API to a cloud service for production use.
