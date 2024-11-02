@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field
 from typing import List
 
 # Define model path
-model_path = "../catboost_model.pkl"
+model_path = os.path.join(os.path.dirname(__file__), "../notebooks/catboost_model.pkl")
 
 # Load the CatBoost model
 with open(model_path, "rb") as file:
