@@ -142,7 +142,7 @@ async def predict(transactions: List[Transaction]):
         test_point.columns = ['Feature', 'Values']
 
         # SHAP values for each feature
-        shap_values_instance = shap_values.values[0]
+        shap_values_instance = shap_values.values[idx]
         feature_names = transformed_df.columns
         # Create a DataFrame to display each feature's SHAP value and probability impact
         df_shap = pd.DataFrame({
