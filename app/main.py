@@ -1,11 +1,20 @@
 import os
+import sys
 import pickle
 import numpy as np
 import pandas as pd
 from catboost import CatBoostClassifier
+import shap
+from openai import OpenAI
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 from typing import List
+# Add the parent directory to the system path
+sys.path.append(os.path.abspath(".."))
+from config import OPENAICONFIGPARAMETERS as of
+
+engine = 'gpt-4o-mini'
+client = OpenAI(api_key=of.api_key, organization=of.organization_id, project=of.project_id)
 
 # Define model path
 model_path = os.path.join(os.path.dirname(__file__), "../notebooks/catboost_model.pkl")
@@ -64,6 +73,46 @@ def transform_dataframe(df):
     
     return df_features
 
+def get_llm_summary(client, df):
+    top_contributors = df.head(5)
+    
+    # Generate the prompt
+    prompt = f"""
+    Please explain to the client the top 5 features contributing to the model's prediction, based on SHAP values. The SHAP values represent each feature's impact on the prediction, with higher absolute values indicating a stronger influence. Here is a breakdown of the top 5 contributors:
+    
+    1. **{top_contributors.iloc[0]['Feature']}**: 
+       - SHAP Value: {top_contributors.iloc[0]['SHAP Value (Log-Odds)']}
+       - Absolute Impact: {top_contributors.iloc[0]['SHAP Value Absolute Value']}
+       - Feature Value: {top_contributors.iloc[0]['Values']}
+    
+    2. **{top_contributors.iloc[1]['Feature']}**: 
+       - SHAP Value: {top_contributors.iloc[1]['SHAP Value (Log-Odds)']}
+       - Absolute Impact: {top_contributors.iloc[1]['SHAP Value Absolute Value']}
+       - Feature Value: {top_contributors.iloc[1]['Values']}
+    
+    3. **{top_contributors.iloc[2]['Feature']}**: 
+       - SHAP Value: {top_contributors.iloc[2]['SHAP Value (Log-Odds)']}
+       - Absolute Impact: {top_contributors.iloc[2]['SHAP Value Absolute Value']}
+       - Feature Value: {top_contributors.iloc[2]['Values']}
+    
+    4. **{top_contributors.iloc[3]['Feature']}**: 
+       - SHAP Value: {top_contributors.iloc[3]['SHAP Value (Log-Odds)']}
+       - Absolute Impact: {top_contributors.iloc[3]['SHAP Value Absolute Value']}
+       - Feature Value: {top_contributors.iloc[3]['Values']}
+    
+    5. **{top_contributors.iloc[4]['Feature']}**: 
+       - SHAP Value: {top_contributors.iloc[4]['SHAP Value (Log-Odds)']}
+       - Absolute Impact: {top_contributors.iloc[4]['SHAP Value Absolute Value']}
+       - Feature Value: {top_contributors.iloc[4]['Values']}
+    
+    These features had the most significant influence on the prediction outcome, with positive or negative SHAP values indicating the direction of their effect.
+    """
+    completions = client.chat.completions.create(model=engine, 
+                                                 temperature=0, 
+                                                 messages=[{"role": "user", "content": prompt}])
+    summary = completions.choices[0].message.content
+    return summary
+
 # Health check endpoint
 @app.get("/")
 def health_check():
@@ -83,5 +132,28 @@ async def predict(transactions: List[Transaction]):
     
     # Convert probabilities to predicted class
     y_pred = np.argmax(y_pred_proba, axis=1)
+
+    explainer = shap.TreeExplainer(catboost_model)
+    shap_values = explainer(transformed_df)
+
+    explanations = []
+    for idx, row in transformed_df.iterrows():
+        test_point = transformed_df.iloc[[idx], :].transpose().reset_index()
+        test_point.columns = ['Feature', 'Values']
+
+        # SHAP values for each feature
+        shap_values_instance = shap_values.values[0]
+        feature_names = transformed_df.columns
+        # Create a DataFrame to display each feature's SHAP value and probability impact
+        df_shap = pd.DataFrame({
+            'Feature': feature_names,
+            'SHAP Value (Log-Odds)': shap_values_instance,
+            'SHAP Value Absolute Value': np.abs(shap_values_instance)
+        })
+        df_shap = df_shap.sort_values(by='SHAP Value Absolute Value', ascending=False).reset_index(drop=True)
+        df_shap = df_shap.merge(test_point, on='Feature')
+        explanation = get_llm_summary(client, df_shap)
+        explanations.append(explanation)
     
-    return {"predictions": y_pred.tolist()}
+    
+    return {"predictions": y_pred.tolist(), "explanations": explanations}
