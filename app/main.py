@@ -10,6 +10,7 @@ from openai import OpenAI
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 from typing import List
+from prometheus_fastapi_instrumentator import Instrumentator
 
 # Initialize logging with file handler
 log_file_path = "app_logs.log"
@@ -44,6 +45,9 @@ except Exception as e:
 
 # Create FastAPI app
 app = FastAPI()
+
+# Initialize Prometheus metrics instrumentator
+Instrumentator().instrument(app).expose(app, endpoint="/metrics")
 
 # Define the JSON schema as a Pydantic model
 class Transaction(BaseModel):
