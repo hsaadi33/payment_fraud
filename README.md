@@ -1,6 +1,6 @@
 # Payment Fraud Detection Project
 
-This project aims to detect fraudulent payment transactions using a machine learning model. The project involves data exploration, model training with the CatBoost algorithm, and an API built using FastAPI to serve predictions, and modal explanability by using shap values and wrapping them with an LLM explanation. The API can be tested locally using the provided `test_api.py` script. You can get the dataset from kaggle (https://www.kaggle.com/datasets/rupakroy/online-payments-fraud-detection-dataset).
+This project aims to detect fraudulent payment transactions using a machine learning model. The project involves data exploration, model training with the CatBoost algorithm, and an API built using FastAPI to serve predictions, and model explanability by using shap values and wrapping them with an LLM explanation. The API can be tested locally using the provided `test_api.py` script. You can get the dataset from kaggle (https://www.kaggle.com/datasets/rupakroy/online-payments-fraud-detection-dataset).
 
 ## Table of Contents
 - [Project Structure](#project-structure)
